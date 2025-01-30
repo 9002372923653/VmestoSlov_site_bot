@@ -16,22 +16,30 @@ if not OPENAI_API_KEY:
 if not AIRTABLE_API_KEY:
     raise ValueError("❌ Ошибка: переменная окружения AIRTABLE_API_KEY не найдена!")
 
-
 # Инициализация клиента OpenAI
 client = OpenAI(api_key=OPENAI_API_KEY)
+# Инициализация API Airtable
+AIRTABLE_BASE_ID = Untitled Base  # Используй свой Base ID из Airtable
+AIRTABLE_TABLE_NAME = Table 1  # Используй точное название таблицы
 
+# Регулярные выражения для извлечения информации
 def process_contact_data(data):
-    # Регулярные выражения для извлечения имени, номера телефона и адреса электронной почты
-    name_pattern = r'[A-Za-zА-Яа-я]+(\s[A-Za-zА-Яа-я]+)?'
-    phone_pattern = r'(\+?\d{1,3})?[ -]?\(?\d{3}\)?[ -]?\d{3}[ -]?\d{2}[ -]?\d{2}'
-    email_pattern = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
+    name_pattern = r"[А-Яа-яA-Za-z]+(?:\s[А-Яа-яA-Za-z]+)?"
+    phone_pattern = r"\+?\d{10,15}"
+    service_pattern = r"(?:букет|цветы|композиция|повод|свадьба|юбилей).*?"
+    amount_pattern = r"\b\d{3,6}\b"  # Бюджет (число от 3 до 6 цифр)
 
-    # Извлечение данных из текста
-    name = re.search(name_pattern, data).group(0)
-    phone = re.search(phone_pattern, data).group(0)
-    email = re.search(email_pattern, data).group(0)
+    name = re.search(name_pattern, data)
+    phone = re.search(phone_pattern, data)
+    service = re.search(service_pattern, data)
+    amount = re.search(amount_pattern, data)
 
-    return name, phone, email
+    return (
+        name.group(0) if name else "Неизвестно",
+        phone.group(0) if phone else "Не указан",
+        service.group(0) if service else "Не указано",
+        int(amount.group(0)) if amount else 0
+    )
 
 # Добавление лида в Airtable
 def create_lead(name, phone, email):
@@ -44,8 +52,9 @@ def create_lead(name, phone, email):
         "records": [{
             "fields": {
                 "Name": name,
-                "Phone": phone,
-                "Email": email
+            "Phone": phone,
+            "Service": service,
+            "Amount of money": amount
             }
         }]
     }
