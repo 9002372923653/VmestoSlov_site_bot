@@ -5,8 +5,17 @@ import os
 from openai import OpenAI
 from prompts import formatter_prompt, assistant_instructions
 
-OPENAI_API_KEY = os.environ['OPENAI_API_KEY']
-AIRTABLE_API_KEY = os.environ['AIRTABLE_API_KEY']
+import os
+
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+AIRTABLE_API_KEY = os.getenv("AIRTABLE_API_KEY")
+
+if not OPENAI_API_KEY:
+    raise ValueError("❌ Ошибка: переменная окружения OPENAI_API_KEY не найдена!")
+
+if not AIRTABLE_API_KEY:
+    raise ValueError("❌ Ошибка: переменная окружения AIRTABLE_API_KEY не найдена!")
+
 
 # Инициализация клиента OpenAI
 client = OpenAI(api_key=OPENAI_API_KEY)
