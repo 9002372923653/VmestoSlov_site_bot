@@ -26,7 +26,7 @@ def process_contact_data(data):
 
 # Добавление лида в Airtable
 def create_lead(name, phone, email):
-    url = "https://api.airtable.com/v0/applOdoV9m5jzQrqc/Leads"  # Измените это на ваш URL API Airtable
+    url = "https://api.airtable.com/v0/appVoeCexAh2D0WmI/Table%201"  # Измените это на ваш URL API Airtable
     headers = {
         "Authorization": "Bearer " + AIRTABLE_API_KEY,
         "Content-Type": "application/json"
@@ -58,32 +58,29 @@ def create_assistant(client):
             assistant_id = assistant_data['assistant_id']
             print("Загружен существующий ID ассистента.")
             return assistant_id
+    
     else:
-        knowledge_base_files = ["IP Camera11.docx", "IP Camera22.docx"]
+        knowledge_base_files = ["VmestoSlov_bot_baze.docx"]
         file_ids = []
 
         for file_path in knowledge_base_files:
-            file = client.files.create(
-                file=open(file_path, "rb"),
-                purpose='assistants'
-            )
+            
+            file = client.files.create(file=open("VmestoSlov_bot_baze.docx", "rb"),
+                purpose='assistants')
             file_ids.append(file.id)
             
         # Создаем Vector Store для базы знаний : Называние в кавычках измените на любое свое.
         vector_store = client.beta.vector_stores.create(
-            name="Название базы знаний(Может быть любое)",
+            name="Vmesto_slov_Vector_store",
             file_ids=file_ids
         )
 
         # Загружаем файл базы знаний через Files API: Сюда подставить название документов с вашей базой знаний!
         knowledge_base_file = client.files.create(
-            file=open("IP Camera11.docx", "rb"),
+            file=open("VmestoSlov_bot_baze.docx", "rb"),
             purpose='assistants'
         )
-        knowledge_base_file = client.files.create(
-            file=open("IP Camera22.docx", "rb"),
-            purpose='assistants'
-        )
+       
 
         # Получаем file_id загруженного файла
         knowledge_base_file_id = knowledge_base_file.id
