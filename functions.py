@@ -19,8 +19,8 @@ if not AIRTABLE_API_KEY:
 # Инициализация клиента OpenAI
 client = OpenAI(api_key=OPENAI_API_KEY)
 # Инициализация API Airtable
-AIRTABLE_BASE_ID = Untitled Base  # Используй свой Base ID из Airtable
-AIRTABLE_TABLE_NAME = Table 1  # Используй точное название таблицы
+AIRTABLE_BASE_ID = "Untitled Base"  # Используй свой Base ID из Airtable
+AIRTABLE_TABLE_NAME = "Table 1"  # Используй точное название таблицы
 
 # Регулярные выражения для извлечения информации
 def process_contact_data(data):
