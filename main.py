@@ -62,9 +62,11 @@ def chat():
     while True:
         run_status = client.beta.threads.runs.retrieve(thread_id=thread_id,
                                                         run_id=run.id)
-        if run_status.status == 'completed':
-            break
+if run_status.status == 'completed':
+    break
 elif run_status.status == 'requires_action':
+    pass
+
     # Обработать вызовы функций
     if hasattr(run_status, "required_action") and hasattr(run_status.required_action, "submit_tool_outputs"):
         tool_calls = run_status.required_action.submit_tool_outputs.tool_calls
