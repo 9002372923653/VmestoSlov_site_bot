@@ -64,12 +64,12 @@ def chat():
                                                         run_id=run.id)
         if run_status.status == 'completed':
             break
-        elif run_status.status == 'requires_action':
-            # Обработать вызов функции
-if hasattr(run_status, "required_action") and hasattr(run_status.required_action, "submit_tool_outputs"):
-    tool_calls = run_status.required_action.submit_tool_outputs.tool_calls
-else:
-    tool_calls = []  # Чтобы избежать ошибки, если tool_calls не существует
+elif run_status.status == 'requires_action':
+    # Обработать вызовы функций
+    if hasattr(run_status, "required_action") and hasattr(run_status.required_action, "submit_tool_outputs"):
+        tool_calls = run_status.required_action.submit_tool_outputs.tool_calls
+    else:
+        tool_calls = []  # Если tool_calls отсутствует, задаем пустой список
 
 if not tool_calls:
     print("⚠ Ошибка: Voiceflow не передал tool_calls!")
