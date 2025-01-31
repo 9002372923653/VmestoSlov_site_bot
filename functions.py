@@ -131,42 +131,53 @@ def create_assistant(client):
         )
 
         # Создаем Assistant с настроенным Vector Store
-        assistant = client.beta.assistants.create(
-            instructions=assistant_instructions,
-            model="gpt-4o",
-            tools=[
-                {
-                    "type": "file_search"  # file_search вместо retrieval
-                },
-                {
-                    "type": "code_interpreter"
-                },
-                {
-                    "type": "function",
-                    "function": {
-                        "name": "create_lead",
-                        "description":
-                        "Захват деталей лида и сохранение в Airtable.",
-                        "parameters": {
-                            "type": "object",
-                            "properties": {
-                                "name": {
-                                    "type": "string",
-                                    "description": "Имя лида."
-                                },
-                                "phone": {
-                                    "type": "string",
-                                    "description": "Телефонный номер лида."
-                                },
-                                "email": {
-                                    "type": "string",
-                                    "description": "email лида."
-                                }
-                            },
-                            "required": ["name", "phone", "email"]
+assistant = client.beta.assistants.create(
+    instructions=assistant_instructions,
+    model="gpt-4o",
+    tools=[
+        {
+            "type": "file_search"  # file_search вместо retrieval
+        },
+        {
+            "type": "code_interpreter"
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "create_lead",
+                "description": "Захват деталей лида и сохранение в Airtable.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "name": {
+                            "type": "string",
+                            "description": "Имя лида."
+                        },
+                        "phone": {
+                            "type": "string",
+                            "description": "Телефонный номер лида."
+                        },
+                        "service": {   # 🆕 Добавлено
+                            "type": "string",
+                            "description": "Тип услуги или повод."
+                        },
+                        "amount": {   # 🆕 Добавлено
+                            "type": "integer",
+                            "description": "Бюджет заказа в рублях."
                         }
-                    }
+                    },
+                    "required": ["name", "phone", "service", "amount"]  # Убрали email, добавили service и amount
                 }
+            }
+        }
+    ],
+    tool_resources={
+        "file_search": {
+            "vector_store_ids": [vector_store.id]
+        }
+    }
+)
+
             ],
             tool_resources={
                 "file_search": {
