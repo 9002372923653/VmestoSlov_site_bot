@@ -87,7 +87,7 @@ def chat():
                                                                     "output":
                                                                     json.dumps(output)
                                                                 }])
-            time.sleep(1)  # Подождите секунду перед повторной проверкой
+    time.sleep(1)  # Подождите секунду перед повторной проверкой
 
     # Получить и вернуть последнее сообщение от помощника
     messages = client.beta.threads.messages.list(thread_id=thread_id)
