@@ -66,7 +66,7 @@ def chat():
             break
         elif run_status.status == 'requires_action':
             # Обработать вызов функции
-           tool_calls = run_status.required_action.submit_tool_outputs.tool_calls
+           tool_calls = run_status.required_action.submit_tool_outputs.tool_calls if run_status.required_action else []
 
 if not tool_calls:
     print("⚠️ Ошибка: Voiceflow не передал tool_calls!")
