@@ -44,6 +44,8 @@ def chat():
 
     run = client.beta.threads.runs.create(thread_id=thread_id, assistant_id=assistant_id)
 
+    tool_call_triggered = False  # 🆕 Переменная-флаг, чтобы понять, вызван ли `create_lead`
+
     while True:
         run_status = client.beta.threads.runs.retrieve(thread_id=thread_id, run_id=run.id)
 
@@ -61,6 +63,8 @@ def chat():
                 for tool_call in tool_calls:
                     print(f"🔄 Проверяем tool_call: {tool_call.function.name}")
                     if tool_call.function.name == "create_lead":
+                        tool_call_triggered = True  # 🆕 Помечаем, что `create_lead` был вызван
+
                         if hasattr(tool_call.function, "arguments"):
                             arguments = json.loads(tool_call.function.arguments)
                         else:
@@ -94,6 +98,28 @@ def chat():
 
     if not response_text.strip():
         response_text = "Ошибка: сообщение пустое"
+
+    # 🆕 Если ассистент не вызвал `create_lead`, форсируем запись в Airtable
+    if not tool_call_triggered:
+        print("⚠️ Ассистент не вызвал create_lead, форсируем запись в Airtable.")
+
+        # 🆕 Проверяем, есть ли данные, иначе подставляем заглушки
+        name = data.get("name", "Неизвестно")
+        phone = data.get("phone", "Не указан")
+        service = "Не указано"
+        amount = 0
+
+        # 🆕 Пытаемся вытащить `service` и `amount` из сообщения пользователя
+        parsed_name, parsed_phone, parsed_service, parsed_amount = functions.process_contact_data(user_input)
+        
+        if parsed_service != "Не указано":
+            service = parsed_service
+        if parsed_amount > 0:
+            amount = parsed_amount
+
+        functions.create_lead(name, phone, service, amount)  # 🆕 Принудительно создаём лид
+
+        response_text += "\n📌 Ваш заказ записан в систему, флорист свяжется с вами при необходимости."
 
     return jsonify({"response": response_text})
 
