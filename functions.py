@@ -20,13 +20,13 @@ if not AIRTABLE_API_KEY:
 client = OpenAI(api_key=OPENAI_API_KEY)
 
 # Инициализация API Airtable
-AIRTABLE_BASE_ID = "Untitled Base"  # ✅ Взято из твоего кода
+AIRTABLE_BASE_ID = "appVoeCexAh2D0WmI"  # ✅ Взято из твоего кода
 AIRTABLE_TABLE_NAME = "Table 1"  # ✅ Взято из твоего кода
 
 # 🔍 **Функция поиска существующего лида**
 def find_existing_lead(client_id, phone=None):
     """Ищет лид в Airtable по client_id или номеру телефона"""
-    url = f"https://api.airtable.com/v0/appVoeCexAh2D0WmI/Table%201"
+    url = f"https://api.airtable.com/v0/{AIRTABLE_BASE_ID}/{AIRTABLE_TABLE_NAME}"
     headers = {"Authorization": f"Bearer {AIRTABLE_API_KEY}"}
 
     response = requests.get(url, headers=headers)
@@ -43,7 +43,7 @@ def find_existing_lead(client_id, phone=None):
 # ✏ **Функция обновления существующего лида**
 def update_lead(record_id, fields):
     """Обновляет существующую запись в Airtable"""
-    url = f"https://api.airtable.com/v0/appVoeCexAh2D0WmI/Table%201/{record_id}"
+    url = f"https://api.airtable.com/v0/{AIRTABLE_BASE_ID}/{AIRTABLE_TABLE_NAME}/{record_id}"
     headers = {
         "Authorization": f"Bearer {AIRTABLE_API_KEY}",
         "Content-Type": "application/json"
@@ -80,7 +80,7 @@ def create_lead(name, phone, service, amount, client_id=None):
         update_lead(existing_record_id, fields)
     else:
         print("📤 Создаем нового лида в Airtable")
-        url = f"https://api.airtable.com/v0/appVoeCexAh2D0WmI/Table%201"
+        url = f"https://api.airtable.com/v0/{AIRTABLE_BASE_ID}/{AIRTABLE_TABLE_NAME}"
         headers = {
             "Authorization": f"Bearer {AIRTABLE_API_KEY}",
             "Content-Type": "application/json"
@@ -94,3 +94,50 @@ def create_lead(name, phone, service, amount, client_id=None):
             print(f"❌ Ошибка при добавлении: {response.text}")
 
     return client_id  # 🆕 Возвращаем client_id, чтобы использовать его в следующих запросах
+
+# ✅ **Функция создания ассистента**
+def create_assistant(client):
+    assistant_file_path = 'assistant.json'
+
+    if os.path.exists(assistant_file_path):
+        with open(assistant_file_path, 'r') as file:
+            assistant_data = json.load(file)
+            assistant_id = assistant_data['assistant_id']
+            print("✅ Загружен существующий ID ассистента:", assistant_id)
+            return assistant_id
+
+    assistant = client.beta.assistants.create(
+        instructions="Ты — виртуальный ассистент цветочного салона. Твоя задача — помочь клиенту подобрать букет и оформить заказ.",
+        model="gpt-4o",
+        tools=[
+            {
+                "type": "file_search"
+            },
+            {
+                "type": "code_interpreter"
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "create_lead",
+                    "description": "Записывает заказ клиента в Airtable.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "name": {"type": "string", "description": "Имя клиента."},
+                            "phone": {"type": "string", "description": "Номер телефона клиента."},
+                            "service": {"type": "string", "description": "Тип заказа (букет, оформление события)."},
+                            "amount": {"type": "integer", "description": "Бюджет заказа в рублях."}
+                        },
+                        "required": ["name", "phone", "service", "amount"]
+                    }
+                }
+            }
+        ]
+    )
+
+    with open(assistant_file_path, 'w') as file:
+        json.dump({'assistant_id': assistant.id}, file)
+        print("✅ Создан новый ассистент и сохранен ID:", assistant.id)
+
+    return assistant.id
