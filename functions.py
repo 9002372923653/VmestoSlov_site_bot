@@ -2,7 +2,7 @@ import json
 import requests
 import re
 import os
-import uuid  # 🆕 Для генерации уникального client_id
+import uuid
 from openai import OpenAI
 from prompts import formatter_prompt, assistant_instructions
 
@@ -20,8 +20,8 @@ if not AIRTABLE_API_KEY:
 client = OpenAI(api_key=OPENAI_API_KEY)
 
 # Инициализация API Airtable
-AIRTABLE_BASE_ID = "appVoeCexAh2D0WmI"  # ✅ Взято из твоего кода
-AIRTABLE_TABLE_NAME = "Table 1"  # ✅ Взято из твоего кода
+AIRTABLE_BASE_ID = "appVoeCexAh2D0WmI"
+AIRTABLE_TABLE_NAME = "Table 1"
 
 # 🔍 **Функция поиска существующего лида**
 def find_existing_lead(client_id, phone=None):
@@ -36,9 +36,9 @@ def find_existing_lead(client_id, phone=None):
         for record in records:
             fields = record.get("fields", {})
             if fields.get("Client ID") == client_id or (phone and fields.get("Phone") == phone):
-                return record["id"]  # Возвращаем ID найденной записи
+                return record["id"]
 
-    return None  # Если не найдено
+    return None
 
 # ✏ **Функция обновления существующего лида**
 def update_lead(record_id, fields):
@@ -50,29 +50,25 @@ def update_lead(record_id, fields):
     }
 
     response = requests.patch(url, json={"fields": fields}, headers=headers)
-    if response.status_code in [200, 201]:
-        print("✅ Лид успешно обновлен в Airtable!")
-    else:
-        print(f"❌ Ошибка при обновлении: {response.text}")
+    print(f"🛑 Ответ от Airtable (обновление): {response.status_code} - {response.text}")
 
-# ✅ **Функция `create_lead()` с поддержкой client_id**
+# ✅ **Функция `create_lead()`**
 def create_lead(name, phone, service, amount, client_id=None):
     """Создает или обновляет лид в Airtable"""
 
     if client_id is None:
-        client_id = str(uuid.uuid4())[:8]  # 🆕 Генерируем уникальный client_id (первые 8 символов)
+        client_id = str(uuid.uuid4())[:8]
 
-    existing_record_id = find_existing_lead(client_id, phone)  # 🆕 Проверяем, есть ли уже запись
+    existing_record_id = find_existing_lead(client_id, phone)
 
     fields = {
-        "Client ID": client_id,  # 🆕 Теперь у каждого клиента есть уникальный ID
+        "Client ID": client_id,
         "Name": name if name != "Неизвестно" else None,
         "Phone": phone if phone != "Не указан" else None,
         "Service": service if service != "Не указано" else None,
         "Amount of money": amount if amount > 0 else None
     }
 
-    # Убираем пустые поля, чтобы не затирать уже существующие данные
     fields = {k: v for k, v in fields.items() if v is not None}
 
     if existing_record_id:
@@ -87,13 +83,9 @@ def create_lead(name, phone, service, amount, client_id=None):
         }
 
         response = requests.post(url, json={"fields": fields}, headers=headers)
+        print(f"🛑 Ответ от Airtable (создание): {response.status_code} - {response.text}")
 
-        if response.status_code in [200, 201]:
-            print("✅ Лид успешно добавлен в Airtable!")
-        else:
-            print(f"❌ Ошибка при добавлении: {response.text}")
-
-    return client_id  # 🆕 Возвращаем client_id, чтобы использовать его в следующих запросах
+    return client_id  # Возвращаем client_id
 
 # ✅ **Функция создания ассистента**
 def create_assistant(client):
@@ -107,15 +99,11 @@ def create_assistant(client):
             return assistant_id
 
     assistant = client.beta.assistants.create(
-        instructions="Ты — виртуальный ассистент цветочного салона. Твоя задача — помочь клиенту подобрать букет и оформить заказ.",
+        instructions="Ты — виртуальный ассистент цветочного салона. Ты помогаешь клиенту выбрать букет и оформить заказ. Не завершай чат самостоятельно!",
         model="gpt-4o",
         tools=[
-            {
-                "type": "file_search"
-            },
-            {
-                "type": "code_interpreter"
-            },
+            {"type": "file_search"},
+            {"type": "code_interpreter"},
             {
                 "type": "function",
                 "function": {
