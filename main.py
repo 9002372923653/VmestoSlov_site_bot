@@ -70,6 +70,8 @@ def chat():
                 if tool_call.function.name == "create_lead":
                     # Обработать создание потенциального клиента
                     arguments = json.loads(tool_call.function.arguments)
+                    print(f"🚀 Вызываем create_lead() с аргументами: {arguments}")  # Отладка
+                    
                     output = functions.create_lead(
     arguments.get("name", "Неизвестно"), 
     arguments.get("phone", "Не указан"), 
