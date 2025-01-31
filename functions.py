@@ -2,11 +2,11 @@ import json
 import requests
 import re
 import os
-import uuid
 from openai import OpenAI
 from prompts import formatter_prompt, assistant_instructions
 
-# Загрузка API-ключей
+import os
+
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 AIRTABLE_API_KEY = os.getenv("AIRTABLE_API_KEY")
 
@@ -18,114 +18,164 @@ if not AIRTABLE_API_KEY:
 
 # Инициализация клиента OpenAI
 client = OpenAI(api_key=OPENAI_API_KEY)
-
 # Инициализация API Airtable
-AIRTABLE_BASE_ID = "appVoeCexAh2D0WmI"
-AIRTABLE_TABLE_NAME = "Table 1"
+AIRTABLE_BASE_ID = "Untitled Base"  # Используй свой Base ID из Airtable
+AIRTABLE_TABLE_NAME = "Table 1"  # Используй точное название таблицы
 
-# 🔍 **Функция поиска существующего лида**
-def find_existing_lead(client_id, phone=None):
-    """Ищет лид в Airtable по client_id или номеру телефона"""
-    url = f"https://api.airtable.com/v0/{AIRTABLE_BASE_ID}/{AIRTABLE_TABLE_NAME}"
-    headers = {"Authorization": f"Bearer {AIRTABLE_API_KEY}"}
+# Регулярные выражения для извлечения информации
+def process_contact_data(data):
+    name_pattern = r"[А-Яа-яA-Za-z]+(?:\s[А-Яа-яA-Za-z]+)?"
+    phone_pattern = r"\+?\d{10,15}"
+    service_pattern = r"(?:букет|цветы|композиция|повод|свадьба|юбилей).*?"
+    amount_pattern = r"\b\d{3,6}\b"  # Бюджет (число от 3 до 6 цифр)
 
-    response = requests.get(url, headers=headers)
-    
-    if response.status_code == 200:
-        records = response.json().get("records", [])
-        for record in records:
-            fields = record.get("fields", {})
-            if fields.get("Client ID") == client_id or (phone and fields.get("Phone") == phone):
-                return record["id"]
+    name = re.search(name_pattern, data)
+    phone = re.search(phone_pattern, data)
+    service = re.search(service_pattern, data)
+    amount = re.search(amount_pattern, data)
 
-    return None
+    return (
+        name.group(0) if name else "Неизвестно",
+        phone.group(0) if phone else "Не указан",
+        service.group(0) if service else "Не указано",
+        int(amount.group(0)) if amount else 0
+    )
 
-# ✏ **Функция обновления существующего лида**
-def update_lead(record_id, fields):
-    """Обновляет существующую запись в Airtable"""
-    url = f"https://api.airtable.com/v0/{AIRTABLE_BASE_ID}/{AIRTABLE_TABLE_NAME}/{record_id}"
+# Добавление лида в Airtable
+import requests
+import json
+
+def create_lead(name, phone, service, amount):
+    url = "https://api.airtable.com/v0/appVoeCexAh2D0WmI/Table%201"  # Твой URL API Airtable
+
     headers = {
         "Authorization": f"Bearer {AIRTABLE_API_KEY}",
         "Content-Type": "application/json"
     }
 
-    response = requests.patch(url, json={"fields": fields}, headers=headers)
-    print(f"🛑 Ответ от Airtable (обновление): {response.status_code} - {response.text}")
-
-# ✅ **Функция `create_lead()`**
-def create_lead(name, phone, service, amount, client_id=None):
-    """Создает или обновляет лид в Airtable"""
-
-    if client_id is None:
-        client_id = str(uuid.uuid4())[:8]
-
-    existing_record_id = find_existing_lead(client_id, phone)
-
-    fields = {
-        "Client ID": client_id,
-        "Name": name if name != "Неизвестно" else None,
-        "Phone": phone if phone != "Не указан" else None,
-        "Service": service if service != "Не указано" else None,
-        "Amount of money": amount if amount > 0 else None
+    data = {
+        "fields": {  # 🔴 Убрал "records", теперь данные отправляются корректно!
+            "Name": name,
+            "Phone": phone,
+            "Service": service,
+            "Amount of money": amount
+        }
     }
 
-    fields = {k: v for k, v in fields.items() if v is not None}
+    # Отладка: Вывод перед отправкой
+    print("📤 Отправляем данные в Airtable:")
+    print(json.dumps(data, indent=4, ensure_ascii=False))
 
-    if existing_record_id:
-        print(f"🔄 Обновляем существующего лида: {existing_record_id}")
-        update_lead(existing_record_id, fields)
+    response = requests.post(url, json=data, headers=headers)
+
+    # Отладка: Вывод ответа от Airtable
+    print("🛑 Ответ от Airtable:", response.status_code, response.text)
+
+    if response.status_code == 200:
+        print("✅ Лид успешно добавлен в Airtable!")
     else:
-        print("📤 Создаем нового лида в Airtable")
-        url = f"https://api.airtable.com/v0/{AIRTABLE_BASE_ID}/{AIRTABLE_TABLE_NAME}"
-        headers = {
-            "Authorization": f"Bearer {AIRTABLE_API_KEY}",
-            "Content-Type": "application/json"
-        }
+        print(f"❌ Ошибка при добавлении: {response.text}")
 
-        response = requests.post(url, json={"fields": fields}, headers=headers)
-        print(f"🛑 Ответ от Airtable (создание): {response.status_code} - {response.text}")
 
-    return client_id  # Возвращаем client_id
-
-# ✅ **Функция создания ассистента**
+# Создание или загрузка ассистента
 def create_assistant(client):
     assistant_file_path = 'assistant.json'
 
+    # Если файл assistant.json уже существует, то загружаем этого ассистента: Сюда подставить название документов с вашей базой знаний! ЭТИ ДОКУМЕНТЫ ДОЛЖНЫ БЫТЬ ДОБАВЛЕНЫ В Replit
     if os.path.exists(assistant_file_path):
         with open(assistant_file_path, 'r') as file:
             assistant_data = json.load(file)
             assistant_id = assistant_data['assistant_id']
-            print("✅ Загружен существующий ID ассистента:", assistant_id)
+            print("Загружен существующий ID ассистента.")
             return assistant_id
+    
+    else:
+        knowledge_base_files = ["VmestoSlov_bot_baze.docx"]
+        file_ids = []
 
-    assistant = client.beta.assistants.create(
-        instructions="Ты — виртуальный ассистент цветочного салона. Ты помогаешь клиенту выбрать букет и оформить заказ. Не завершай чат самостоятельно!",
-        model="gpt-4o",
-        tools=[
-            {"type": "file_search"},
-            {"type": "code_interpreter"},
-            {
-                "type": "function",
-                "function": {
-                    "name": "create_lead",
-                    "description": "Записывает заказ клиента в Airtable.",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "name": {"type": "string", "description": "Имя клиента."},
-                            "phone": {"type": "string", "description": "Номер телефона клиента."},
-                            "service": {"type": "string", "description": "Тип заказа (букет, оформление события)."},
-                            "amount": {"type": "integer", "description": "Бюджет заказа в рублях."}
-                        },
-                        "required": ["name", "phone", "service", "amount"]
+        for file_path in knowledge_base_files:
+            
+            file = client.files.create(file=open("VmestoSlov_bot_baze.docx", "rb"),
+                purpose='assistants')
+            file_ids.append(file.id)
+            
+        # Создаем Vector Store для базы знаний : Называние в кавычках измените на любое свое.
+        vector_store = client.beta.vector_stores.create(
+            name="Vmesto_slov_Vector_store",
+            file_ids=file_ids
+        )
+
+        # Загружаем файл базы знаний через Files API: Сюда подставить название документов с вашей базой знаний!
+        knowledge_base_file = client.files.create(
+            file=open("VmestoSlov_bot_baze.docx", "rb"),
+            purpose='assistants'
+        )
+       
+
+        # Получаем file_id загруженного файла
+        knowledge_base_file_id = knowledge_base_file.id
+
+        # Заливаем файл с базой знаний в Vector Store
+        file_batch = client.beta.vector_stores.file_batches.create_and_poll(
+            vector_store_id=vector_store.id,
+            file_ids=[knowledge_base_file_id]  # Используем полученный file_id
+        )
+
+        # Создаем Assistant с настроенным Vector Store
+        assistant = client.beta.assistants.create(
+            instructions=assistant_instructions,
+            model="gpt-4o",
+            tools=[
+                {
+                    "type": "file_search"  # file_search вместо retrieval
+                },
+                {
+                    "type": "code_interpreter"
+                },
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "create_lead",
+                        "description":
+                        "Захват деталей лида и сохранение в Airtable.",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {
+                                "name": {
+                                    "type": "string",
+                                    "description": "Имя лида."
+                                },
+                                "phone": {
+                                    "type": "string",
+                                    "description": "Телефонный номер лида."
+                                },
+                                "email": {
+                                    "type": "string",
+                                    "description": "email лида."
+                                }
+                            },
+                            "required": ["name", "phone", "email"]
+                        }
                     }
                 }
+            ],
+            tool_resources={
+                "file_search": {
+                    "vector_store_ids": [vector_store.id]
+                }
             }
-        ]
-    )
+        )
 
-    with open(assistant_file_path, 'w') as file:
-        json.dump({'assistant_id': assistant.id}, file)
-        print("✅ Создан новый ассистент и сохранен ID:", assistant.id)
+        assistant = client.beta.assistants.update(
+          assistant_id=assistant.id,
+          tool_resources={"file_search": {"vector_store_ids": [vector_store.id]}},
+        )
+        # Создание нового файла assistant.json для загрузки при будущих запусках
+        with open(assistant_file_path, 'w') as file:
+            json.dump({'assistant_id': assistant.id}, file)
+            print("Создан новый ассистент и сохранен ID.")
 
-    return assistant.id
+
+    assistant_id = assistant.id
+
+    return assistant_id
