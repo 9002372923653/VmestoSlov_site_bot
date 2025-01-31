@@ -66,10 +66,13 @@ def chat():
             break
         elif run_status.status == 'requires_action':
             # Обработать вызов функции
-           tool_calls = run_status.required_action.submit_tool_outputs.tool_calls if run_status.required_action else []
+if hasattr(run_status, "required_action") and hasattr(run_status.required_action, "submit_tool_outputs"):
+    tool_calls = run_status.required_action.submit_tool_outputs.tool_calls
+else:
+    tool_calls = []  # Чтобы избежать ошибки, если tool_calls не существует
 
 if not tool_calls:
-    print("⚠️ Ошибка: Voiceflow не передал tool_calls!")
+    print("⚠ Ошибка: Voiceflow не передал tool_calls!")
 else:
     for tool_call in tool_calls:
         print(f"🔄 Проверяем tool_call: {tool_call.function.name}")
