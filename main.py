@@ -66,8 +66,13 @@ def chat():
             break
         elif run_status.status == 'requires_action':
             # Обработать вызов функции
-            for tool_call in run_status.required_action.submit_tool_outputs.tool_calls:
-               print(f"🛠 Получена команда от Voiceflow: {tool_call.function.name}")
+           tool_calls = run_status.required_action.submit_tool_outputs.tool_calls
+
+if not tool_calls:
+    print("⚠️ Ошибка: Voiceflow не передал tool_calls!")
+else:
+    for tool_call in tool_calls:
+        print(f"🔄 Проверяем tool_call: {tool_call.function.name}")
     if tool_call.function.name == "create_lead":
                     # Обработать создание потенциального клиента
                     arguments = json.loads(tool_call.function.arguments)
@@ -92,10 +97,12 @@ def chat():
     # Получить и вернуть последнее сообщение от помощника
     messages = client.beta.threads.messages.list(thread_id=thread_id)
     response_text = messages.data[0].content[0].text.value
+    print(f"📨 Отправляем в OpenAI: {response_text}")  # 🔍 Отладка
 
-    print(f"Ответ помощника: {response_text}")
+    if not response_text.strip():
+    response_text = "Ошибка: сообщение пустое"
+
     return jsonify({"response": response_text})
-
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080)
