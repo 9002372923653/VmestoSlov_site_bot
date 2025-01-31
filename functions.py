@@ -20,13 +20,13 @@ if not AIRTABLE_API_KEY:
 client = OpenAI(api_key=OPENAI_API_KEY)
 
 # Инициализация API Airtable
-AIRTABLE_BASE_ID = "appVoeCexAh2D0WmI"  # ✅ Взято из твоего кода
+AIRTABLE_BASE_ID = "Untitled Base"  # ✅ Взято из твоего кода
 AIRTABLE_TABLE_NAME = "Table 1"  # ✅ Взято из твоего кода
 
 # 🔍 **Функция поиска существующего лида**
 def find_existing_lead(client_id, phone=None):
     """Ищет лид в Airtable по client_id или номеру телефона"""
-    url = f"https://api.airtable.com/v0/{AIRTABLE_BASE_ID}/{AIRTABLE_TABLE_NAME}"
+    url = f"https://api.airtable.com/v0/appVoeCexAh2D0WmI/Table%201"
     headers = {"Authorization": f"Bearer {AIRTABLE_API_KEY}"}
 
     response = requests.get(url, headers=headers)
@@ -43,7 +43,7 @@ def find_existing_lead(client_id, phone=None):
 # ✏ **Функция обновления существующего лида**
 def update_lead(record_id, fields):
     """Обновляет существующую запись в Airtable"""
-    url = f"https://api.airtable.com/v0/{AIRTABLE_BASE_ID}/{AIRTABLE_TABLE_NAME}/{record_id}"
+    url = f"https://api.airtable.com/v0/appVoeCexAh2D0WmI/Table%201/{record_id}"
     headers = {
         "Authorization": f"Bearer {AIRTABLE_API_KEY}",
         "Content-Type": "application/json"
@@ -80,7 +80,7 @@ def create_lead(name, phone, service, amount, client_id=None):
         update_lead(existing_record_id, fields)
     else:
         print("📤 Создаем нового лида в Airtable")
-        url = f"https://api.airtable.com/v0/{AIRTABLE_BASE_ID}/{AIRTABLE_TABLE_NAME}"
+        url = f"https://api.airtable.com/v0/appVoeCexAh2D0WmI/Table%201"
         headers = {
             "Authorization": f"Bearer {AIRTABLE_API_KEY}",
             "Content-Type": "application/json"
