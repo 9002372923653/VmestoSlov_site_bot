@@ -99,8 +99,9 @@ else:
     response_text = messages.data[0].content[0].text.value
     print(f"📨 Отправляем в OpenAI: {response_text}")  # 🔍 Отладка
 
-    if not response_text.strip():
+if response_text.strip() == "":
     response_text = "Ошибка: сообщение пустое"
+
     return jsonify({"response": response_text})
 
 if __name__ == '__main__':
