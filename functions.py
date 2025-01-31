@@ -121,7 +121,6 @@ def create_assistant(client):
             purpose='assistants'
         )
        
-
         # Получаем file_id загруженного файла
         knowledge_base_file_id = knowledge_base_file.id
 
