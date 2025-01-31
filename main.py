@@ -41,8 +41,39 @@ def chat():
 
     client.beta.threads.messages.create(thread_id=thread_id, role="user", content=user_input)
 
+    # 🆕 Запуск OpenAI Assistant для обработки запроса
     run = client.beta.threads.runs.create(thread_id=thread_id, assistant_id=assistant_id)
 
+    # 🔄 Ожидание завершения работы ассистента
+    while True:
+        run_status = client.beta.threads.runs.retrieve(thread_id=thread_id, run_id=run.id)
+
+        if run_status.status == 'completed':
+            break
+        elif run_status.status == 'requires_action':
+            tool_calls = getattr(run_status.required_action, "submit_tool_outputs", {}).get("tool_calls", [])
+
+            for tool_call in tool_calls:
+                if tool_call.function.name == "create_lead":
+                    arguments = json.loads(tool_call.function.arguments)
+                    print(f"🚀 Вызываем create_lead() с аргументами: {arguments}")
+
+                    output = functions.create_lead(
+                        arguments.get("name", "Неизвестно"),
+                        arguments.get("phone", "Не указан"),
+                        arguments.get("service", "Не указано"),
+                        arguments.get("amount", 0),
+                        client_id
+                    )
+
+                    client.beta.threads.runs.submit_tool_outputs(thread_id=thread_id, run_id=run.id,
+                                                                 tool_outputs=[{
+                                                                     "tool_call_id": tool_call.id,
+                                                                     "output": json.dumps(output)
+                                                                 }])
+            time.sleep(1)
+
+    # 🆕 Получение ответа от OpenAI Assistant
     messages = client.beta.threads.messages.list(thread_id=thread_id)
     response_text = messages.data[0].content[0].text.value if messages.data else "Ошибка: сообщение пустое"
 
