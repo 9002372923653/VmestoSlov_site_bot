@@ -42,28 +42,40 @@ def process_contact_data(data):
     )
 
 # Добавление лида в Airtable
-def create_lead(name, phone, email):
-    url = "https://api.airtable.com/v0/appVoeCexAh2D0WmI/Table%201"  # Измените это на ваш URL API Airtable
+import requests
+import json
+
+def create_lead(name, phone, service, amount):
+    url = "https://api.airtable.com/v0/appVoeCexAh2D0WmI/Table%201"  # Твой URL API Airtable
+
     headers = {
-        "Authorization": "Bearer " + AIRTABLE_API_KEY,
+        "Authorization": f"Bearer {AIRTABLE_API_KEY}",
         "Content-Type": "application/json"
     }
+
     data = {
-        "records": [{
-            "fields": {
-                "Name": name,
+        "fields": {  # 🔴 Убрал "records", теперь данные отправляются корректно!
+            "Name": name,
             "Phone": phone,
             "Service": service,
             "Amount of money": amount
-            }
-        }]
+        }
     }
-    response = requests.post(url, headers=headers, json=data)
+
+    # Отладка: Вывод перед отправкой
+    print("📤 Отправляем данные в Airtable:")
+    print(json.dumps(data, indent=4, ensure_ascii=False))
+
+    response = requests.post(url, json=data, headers=headers)
+
+    # Отладка: Вывод ответа от Airtable
+    print("🛑 Ответ от Airtable:", response.status_code, response.text)
+
     if response.status_code == 200:
-        print("Лид успешно создан.")
-        return response.json()
+        print("✅ Лид успешно добавлен в Airtable!")
     else:
-        print(f"Не удалось создать лида: {response.text}")
+        print(f"❌ Ошибка при добавлении: {response.text}")
+
 
 # Создание или загрузка ассистента
 def create_assistant(client):
