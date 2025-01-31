@@ -5,6 +5,7 @@ from flask import Flask, request, jsonify
 import openai
 from openai import OpenAI
 import functions
+import uuid  # 🆕 Для генерации уникального client_id
 
 from packaging import version
 
@@ -23,28 +24,24 @@ assistant_id = functions.create_assistant(client)
 
 @app.route('/start', methods=['GET'])
 def start_conversation():
-    print("Начинается новая беседа...")
+    client_id = str(uuid.uuid4())[:8]  # 🆕 Генерируем уникальный client_id
+    print(f"Начинается новая беседа... Присвоен client_id: {client_id}")
     thread = client.beta.threads.create()
-    print(f"Создан новый поток с ID: {thread.id}")
-    return jsonify({"thread_id": thread.id})
+    return jsonify({"thread_id": thread.id, "client_id": client_id})
 
 @app.route('/chat', methods=['POST'])
 def chat():
     data = request.json
     thread_id = data.get('thread_id')
+    client_id = data.get('client_id')  # 🆕 Получаем client_id из запроса
     user_input = data.get('message', '')
 
     if not thread_id:
-        print("Ошибка: отсутствует thread_id")
         return jsonify({"error": "Отсутствует thread_id"}), 400
-
-    print(f"Получено сообщение: {user_input} для потока с ID: {thread_id}")
 
     client.beta.threads.messages.create(thread_id=thread_id, role="user", content=user_input)
 
     run = client.beta.threads.runs.create(thread_id=thread_id, assistant_id=assistant_id)
-
-    tool_call_triggered = False  # 🆕 Переменная-флаг, чтобы понять, вызван ли `create_lead`
 
     while True:
         run_status = client.beta.threads.runs.retrieve(thread_id=thread_id, run_id=run.id)
@@ -52,76 +49,32 @@ def chat():
         if run_status.status == 'completed':
             break
         elif run_status.status == 'requires_action':
-            if hasattr(run_status, "required_action") and hasattr(run_status.required_action, "submit_tool_outputs"):
-                tool_calls = run_status.required_action.submit_tool_outputs.tool_calls
-            else:
-                tool_calls = []
+            tool_calls = getattr(run_status.required_action, "submit_tool_outputs", {}).get("tool_calls", [])
 
-            if not tool_calls:
-                print("⚠ Ошибка: Voiceflow не передал tool_calls!")
-            else:
-                for tool_call in tool_calls:
-                    print(f"🔄 Проверяем tool_call: {tool_call.function.name}")
-                    if tool_call.function.name == "create_lead":
-                        tool_call_triggered = True  # 🆕 Помечаем, что `create_lead` был вызван
+            for tool_call in tool_calls:
+                if tool_call.function.name == "create_lead":
+                    arguments = json.loads(tool_call.function.arguments)
+                    print(f"🚀 Вызываем create_lead() с аргументами: {arguments}")
 
-                        if hasattr(tool_call.function, "arguments"):
-                            arguments = json.loads(tool_call.function.arguments)
-                        else:
-                            arguments = {}
+                    output = functions.create_lead(
+                        arguments.get("name", "Неизвестно"),
+                        arguments.get("phone", "Не указан"),
+                        arguments.get("service", "Не указано"),
+                        arguments.get("amount", 0),
+                        client_id  # 🆕 Передаём client_id
+                    )
 
-                        print(f"🚀 Вызываем create_lead() с аргументами: {arguments}")
-
-                        output = functions.create_lead(
-                            arguments.get("name", "Неизвестно"), 
-                            arguments.get("phone", "Не указан"), 
-                            arguments.get("service", "Не указано"), 
-                            arguments.get("amount", 0)
-                        )
-
-                        client.beta.threads.runs.submit_tool_outputs(thread_id=thread_id, run_id=run.id,
-                                                                     tool_outputs=[{
-                                                                         "tool_call_id": tool_call.id,
-                                                                         "output": json.dumps(output)
-                                                                     }])
-
+                    client.beta.threads.runs.submit_tool_outputs(thread_id=thread_id, run_id=run.id,
+                                                                 tool_outputs=[{
+                                                                     "tool_call_id": tool_call.id,
+                                                                     "output": json.dumps(output)
+                                                                 }])
             time.sleep(1)
 
     messages = client.beta.threads.messages.list(thread_id=thread_id)
+    response_text = messages.data[0].content[0].text.value if messages.data else "Ошибка: сообщение пустое"
 
-    if messages.data:
-        response_text = messages.data[0].content[0].text.value
-    else:
-        response_text = "Ошибка: сообщение пустое"
-
-    print(f"📨 Отправляем в OpenAI: {response_text}")
-
-    if not response_text.strip():
-        response_text = "Ошибка: сообщение пустое"
-
-    # 🆕 Если ассистент не вызвал `create_lead`, форсируем запись в Airtable
-    if not tool_call_triggered:
-        print("⚠️ Ассистент не вызвал create_lead, форсируем запись в Airtable.")
-
-        # 🆕 Проверяем, есть ли данные, иначе подставляем заглушки
-        name = data.get("name", "Неизвестно")
-        phone = data.get("phone", "Не указан")
-        service = "Не указано"
-        amount = 0
-
-        # 🆕 Пытаемся вытащить `service` и `amount` из сообщения пользователя
-        parsed_name, parsed_phone, parsed_service, parsed_amount = functions.process_contact_data(user_input)
-        
-        if parsed_service != "Не указано":
-            service = parsed_service
-        if parsed_amount > 0:
-            amount = parsed_amount
-
-        functions.create_lead(name, phone, service, amount)  # 🆕 Принудительно создаём лид
-
-        response_text += "\n📌 Ваш заказ записан в систему, флорист свяжется с вами при необходимости."
-
-    return jsonify({"response": response_text})
+    return jsonify({"response": response_text, "client_id": client_id})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080)
