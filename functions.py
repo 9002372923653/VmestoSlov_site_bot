@@ -52,6 +52,11 @@ def create_lead(name, phone, service, amount):
         "Authorization": f"Bearer {AIRTABLE_API_KEY}",
         "Content-Type": "application/json"
     }
+# ✅ Проверяем и конвертируем amount в число, если это возможно
+    try:
+        amount = int(amount)  # Принудительно переводим в число
+    except (ValueError, TypeError):
+        amount = 0  # Если ошибка — записываем 0
 
     data = {
         "fields": {  # 🔴 Убрал "records", теперь данные отправляются корректно!
@@ -68,10 +73,10 @@ def create_lead(name, phone, service, amount):
 
     response = requests.post(url, json=data, headers=headers)
 
-    # Отладка: Вывод ответа от Airtable
+# 🔍 Логируем ответ от Airtable
     print("🛑 Ответ от Airtable:", response.status_code, response.text)
 
-    if response.status_code == 200:
+    if response.status_code in [200, 201]:  # ✅ Airtable возвращает 201 при успешном добавлении
         print("✅ Лид успешно добавлен в Airtable!")
     else:
         print(f"❌ Ошибка при добавлении: {response.text}")
