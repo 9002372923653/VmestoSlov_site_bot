@@ -24,21 +24,26 @@ AIRTABLE_TABLE_NAME = "Table 1"  # Используй точное назван�
 
 # Регулярные выражения для извлечения информации
 def process_contact_data(data):
-    name_pattern = r"[А-Яа-яA-Za-z]+(?:\s[А-Яа-яA-Za-z]+)?"
-    phone_pattern = r"\+?\d{10,15}"
-    service_pattern = r"(?:букет|цветы|композиция|повод|свадьба|юбилей).*?"
-    amount_pattern = r"\b\d{3,6}\b"  # Бюджет (число от 3 до 6 цифр)
+    # Регулярные выражения для извлечения информации
+    name_pattern = r"[А-Яа-яA-Za-z]+(?:\s[А-Яа-яA-Za-z]+)?"  # Имя
+    phone_pattern = r"\+?\d{10,15}"  # Телефон
+    service_pattern = r"(?:букет|цветы|композиция|повод|свадьба|юбилей|день рождения|праздник|годовщина).*?"  # Тип услуги
+    amount_pattern = r"(\d{3,8})\s?(?:рублей|р|₽)?"  # Бюджет (число от 3 до 8 цифр с "рублей")
 
+    # Ищем совпадения в тексте
     name = re.search(name_pattern, data)
     phone = re.search(phone_pattern, data)
-    service = re.search(service_pattern, data)
+    service = re.search(service_pattern, data, re.IGNORECASE)
     amount = re.search(amount_pattern, data)
+
+    # Логируем найденные данные
+    print(f"🔍 Найдено: Name: {name.group(0) if name else '❌'}, Phone: {phone.group(0) if phone else '❌'}, Service: {service.group(0) if service else '❌'}, Amount: {amount.group(1) if amount else '❌'}")
 
     return (
         name.group(0) if name else "Неизвестно",
         phone.group(0) if phone else "Не указан",
         service.group(0) if service else "Не указано",
-        int(amount.group(0)) if amount else 0
+        int(amount.group(1)) if amount else 0
     )
 
 # Добавление лида в Airtable
