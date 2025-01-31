@@ -99,10 +99,12 @@ else:
     response_text = messages.data[0].content[0].text.value
     print(f"📨 Отправляем в OpenAI: {response_text}")  # 🔍 Отладка
 
-if response_text.strip() == "":
-    response_text = "Ошибка: сообщение пустое"
+def chat():  # Функция chat()
+    ...
+    if not response_text.strip():  # Проверяем, пустое ли сообщение
+        response_text = "Ошибка: сообщение пустое"
 
-    return jsonify({"response": response_text})
+    return jsonify({"response": response_text})  # ← Должно быть внутри функции!
 
-if __name__ == '__main__':
+if __name__ == '__main__':  # Запуск приложения
     app.run(host='0.0.0.0', port=8080)
