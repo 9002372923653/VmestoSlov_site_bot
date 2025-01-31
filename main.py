@@ -70,8 +70,12 @@ def chat():
                 if tool_call.function.name == "create_lead":
                     # Обработать создание потенциального клиента
                     arguments = json.loads(tool_call.function.arguments)
-                    output = functions.create_lead(arguments["name"], arguments["phone"], arguments["service"], arguments["amount"])
-
+                    output = functions.create_lead(
+    arguments.get("name", "Неизвестно"), 
+    arguments.get("phone", "Не указан"), 
+    arguments.get("service", "Не указано"), 
+    arguments.get("amount", 0)
+)
                     client.beta.threads.runs.submit_tool_outputs(thread_id=thread_id,
                                                                 run_id=run.id,
                                                                 tool_outputs=[{
