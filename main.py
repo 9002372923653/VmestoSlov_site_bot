@@ -101,7 +101,6 @@ else:
 
     if not response_text.strip():
     response_text = "Ошибка: сообщение пустое"
-
     return jsonify({"response": response_text})
 
 if __name__ == '__main__':
