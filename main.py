@@ -68,8 +68,7 @@ def chat():
             # Обработать вызов функции
             for tool_call in run_status.required_action.submit_tool_outputs.tool_calls:
                print(f"🛠 Получена команда от Voiceflow: {tool_call.function.name}")
-
-                if tool_call.function.name == "create_lead":
+    if tool_call.function.name == "create_lead":
                     # Обработать создание потенциального клиента
                     arguments = json.loads(tool_call.function.arguments)
                     print(f"🚀 Вызываем create_lead() с аргументами: {arguments}")  # Отладка
