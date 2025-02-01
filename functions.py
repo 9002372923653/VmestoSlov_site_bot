@@ -44,7 +44,8 @@ def process_contact_data(data):
 
 # Функция создания лида в Airtable
 def create_lead(name, phone, service, amount):
-    url = f"https://api.airtable.com/v0/{AIRTABLE_BASE_ID}/{AIRTABLE_TABLE_NAME}"
+    print(f"📦 Данные для Airtable: {name}, {phone}, {service}, {amount}")  # Проверка данных
+    url = f"https://api.airtable.com/v0/appVoeCexAh2D0WmI/Table%201"
     headers = {
         "Authorization": f"Bearer {AIRTABLE_API_KEY}",
         "Content-Type": "application/json"
@@ -57,6 +58,9 @@ def create_lead(name, phone, service, amount):
             "Amount of money": amount
         }
     }
+
+    print(f"📤 Отправляем в Airtable: {json.dumps(data, indent=2, ensure_ascii=False)}")  # Проверка JSON
+    
     response = requests.post(url, json=data, headers=headers)
     print(f"🔍 Статус ответа: {response.status_code}")
     print(f"🔍 Тело ответа: {response.text}")
@@ -103,7 +107,7 @@ def create_assistant(client):
                         "service": {"type": "string", "description": "Услуга, интересующая лида."},
                         "amount": {"type": "integer", "description": "Сумма сделки."}
                     },
-                    "required": ["name", "phone"]
+                    "required": ["name", "phone", "service", "amount"]
                 }
             }}
         ],
