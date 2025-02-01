@@ -9,6 +9,8 @@ from prompts import formatter_prompt, assistant_instructions
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 AIRTABLE_API_KEY = os.getenv("AIRTABLE_API_KEY")
 
+print(f"AIRTABLE_API_KEY: {AIRTABLE_API_KEY}")  # Проверка API-ключа
+
 if not OPENAI_API_KEY:
     raise ValueError("❌ Ошибка: переменная окружения OPENAI_API_KEY не найдена!")
 if not AIRTABLE_API_KEY:
@@ -56,6 +58,8 @@ def create_lead(name, phone, service, amount):
         }
     }
     response = requests.post(url, json=data, headers=headers)
+    print(f"🔍 Статус ответа: {response.status_code}")
+    print(f"🔍 Тело ответа: {response.text}")
     if response.status_code == 200:
         print("✅ Лид успешно добавлен в Airtable!")
     else:
