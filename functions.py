@@ -103,7 +103,7 @@ def create_assistant(client):
                         "service": {"type": "string", "description": "Услуга, интересующая лида."},
                         "amount": {"type": "integer", "description": "Сумма сделки."}
                     },
-                    "required": ["name", "phone", "service", "amount"]
+                    "required": ["name", "phone"]
                 }
             }}
         ],
