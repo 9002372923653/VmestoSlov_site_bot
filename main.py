@@ -72,9 +72,11 @@ def chat():
             break
 
         elif run_status.status == 'requires_action':
+            print("🌀 Ассистент требует выполнения действия.")  # Проверка статуса
             tool_calls = []
             if hasattr(run_status, "required_action") and hasattr(run_status.required_action, "submit_tool_outputs"):
                 tool_calls = run_status.required_action.submit_tool_outputs.tool_calls
+                print(f"🔧 Tool calls: {tool_calls}")  # Проверка наличия вызова функций
 
             if not tool_calls:
                 print("⚠ Предупреждение: Voiceflow не передал tool_calls!")
