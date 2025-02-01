@@ -16,8 +16,8 @@ if not AIRTABLE_API_KEY:
 
 # Инициализация клиентов
 client = OpenAI(api_key=OPENAI_API_KEY)
-AIRTABLE_BASE_ID = "YOUR_BASE_ID"  # Укажите реальный Base ID
-AIRTABLE_TABLE_NAME = "YOUR_TABLE_NAME"  # Укажите точное название таблицы
+AIRTABLE_BASE_ID = "Untitled Base"  # Укажите реальный Base ID
+AIRTABLE_TABLE_NAME = "Table 1"  # Укажите точное название таблицы
 
 # Функция обработки контактных данных
 
@@ -42,7 +42,7 @@ def process_contact_data(data):
 # Функция создания лида в Airtable
 
 def create_lead(name, phone, service, amount):
-    url = f"https://api.airtable.com/v0/{AIRTABLE_BASE_ID}/{AIRTABLE_TABLE_NAME}"
+    url = f"https://api.airtable.com/v0/appVoeCexAh2D0WmI/Table%201"
     headers = {
         "Authorization": f"Bearer {AIRTABLE_API_KEY}",
         "Content-Type": "application/json"
