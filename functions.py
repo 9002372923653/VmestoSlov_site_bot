@@ -57,7 +57,7 @@ def create_lead(name, phone, service, amount):
     }
     data = {
         "fields": {
-            "chat_id": chat_id,
+            "chat_id": str(chat_id),
             "Name": name,
             "Phone": phone,
             "Service": service,
