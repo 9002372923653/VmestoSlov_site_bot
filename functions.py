@@ -114,6 +114,8 @@ def create_assistant(client):
         tool_resources={"file_search": {"vector_store_ids": [vector_store.id]}}
     )
     print(f"✅ Ассистент создан с ID: {assistant.id}")
+    # 🚀 Проверка зарегистрированных функций ассистента
+    print(f"🛠️ Зарегистрированные инструменты ассистента: {assistant.tools}")
 
     # Обновление ассистента
     assistant = client.beta.assistants.update(
