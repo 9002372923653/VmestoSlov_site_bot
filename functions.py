@@ -84,6 +84,8 @@ def create_assistant(client):
     vector_store = client.beta.vector_stores.create(
         name="Vmesto_slov_Vector_store", file_ids=file_ids
     )
+
+    # Создание ассистента
     assistant = client.beta.assistants.create(
         instructions=assistant_instructions,
         model="gpt-4o",
@@ -107,10 +109,34 @@ def create_assistant(client):
         ],
         tool_resources={"file_search": {"vector_store_ids": [vector_store.id]}}
     )
+    print(f"✅ Ассистент создан с ID: {assistant.id}")
+
+    # Обновление ассистента
     assistant = client.beta.assistants.update(
         assistant_id=assistant.id,
+        instructions=assistant_instructions,
+        tools=[
+            {"type": "file_search"},
+            {"type": "code_interpreter"},
+            {"type": "function", "function": {
+                "name": "create_lead",
+                "description": "Захват деталей лида и сохранение в Airtable.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "name": {"type": "string", "description": "Имя лида."},
+                        "phone": {"type": "string", "description": "Телефонный номер лида."},
+                        "service": {"type": "string", "description": "Услуга, интересующая лида."},
+                        "amount": {"type": "integer", "description": "Сумма сделки."}
+                    },
+                    "required": ["name", "phone", "service", "amount"]
+                }
+            }}
+        ],
         tool_resources={"file_search": {"vector_store_ids": [vector_store.id]}}
     )
+    print(f"✅ Ассистент обновлён с ID: {assistant.id}")
+
     with open(assistant_file_path, 'w') as file:
         json.dump({'assistant_id': assistant.id}, file)
     return assistant.id
