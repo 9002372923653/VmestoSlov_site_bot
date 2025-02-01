@@ -76,16 +76,16 @@ def chat():
             if hasattr(run_status, "required_action") and hasattr(run_status.required_action, "submit_tool_outputs"):
                 tool_calls = run_status.required_action.submit_tool_outputs.tool_calls
 
-if not tool_calls:
-    print("⚠ Предупреждение: Voiceflow не передал tool_calls!")
-else:
-    for tool_call in tool_calls:
-        print(f"🔍 Проверка вызова функции: {tool_call.function.name}")  # Проверка вызова
+            if not tool_calls:
+                print("⚠ Предупреждение: Voiceflow не передал tool_calls!")
+            else:
+                for tool_call in tool_calls:
+                    print(f"🔍 Проверка вызова функции: {tool_call.function.name}")  # Проверка вызова
 
-        if tool_call.function.name == "create_lead":
-            print("🚀 Сценарий create_lead запущен!")  # Проверка запуска
-            arguments = json.loads(tool_call.function.arguments)
-            print(f"📋 Аргументы для create_lead: {arguments}")  # Проверка аргументов
+                    if tool_call.function.name == "create_lead":
+                        print("🚀 Сценарий create_lead запущен!")  # Проверка запуска
+                        arguments = json.loads(tool_call.function.arguments)
+                        print(f"📋 Аргументы для create_lead: {arguments}")  # Проверка аргументов
 
                         output = functions.create_lead(
                             arguments.get("name", "Неизвестно"),
