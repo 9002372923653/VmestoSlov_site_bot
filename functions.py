@@ -2,6 +2,10 @@ import json
 import requests
 import re
 import os
+import random
+def generate_chat_id():
+    return random.randint(100000, 999999)  # Генерация ID от 100000 до 999999
+
 from openai import OpenAI
 from prompts import formatter_prompt, assistant_instructions
 
@@ -44,7 +48,8 @@ def process_contact_data(data):
 
 # Функция создания лида в Airtable
 def create_lead(name, phone, service, amount):
-    print(f"📦 Данные для Airtable: {name}, {phone}, {service}, {amount}")  # Проверка данных
+    chat_id = generate_chat_id()  # Генерация ID для клиента
+    print(f"📦 Данные для Airtable: {chat_id}, {name}, {phone}, {service}, {amount}")  # Проверка данных
     url = f"https://api.airtable.com/v0/appVoeCexAh2D0WmI/Table%201"
     headers = {
         "Authorization": f"Bearer {AIRTABLE_API_KEY}",
@@ -52,6 +57,7 @@ def create_lead(name, phone, service, amount):
     }
     data = {
         "fields": {
+            "chat_id": chat_id,
             "Name": name,
             "Phone": phone,
             "Service": service,
