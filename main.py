@@ -114,15 +114,6 @@ def chat():
     print(f"📨 Отправляем ответ пользователю: {response_text}")
     return jsonify({"response": response_text})
 
-# 🚀 Тестовый вызов функции create_lead
-functions.create_lead(
-    name="Тестовый клиент",
-    phone="+79999999999",
-    service="Тестовая услуга",
-    amount=1000
-)
-
-
 # 🚀 Запуск Flask-приложения
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080, debug=True)
