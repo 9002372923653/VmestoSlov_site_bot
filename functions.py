@@ -5,24 +5,25 @@ import os
 from openai import OpenAI
 from prompts import formatter_prompt, assistant_instructions
 
-# Получение API-ключей
+# Загрузка переменных окружения
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 AIRTABLE_API_KEY = os.getenv("AIRTABLE_API_KEY")
 
-print(f"AIRTABLE_API_KEY: {AIRTABLE_API_KEY}")  # Проверка API-ключа
+# Проверка загрузки API-ключа
+print(f"AIRTABLE_API_KEY: {AIRTABLE_API_KEY}")
 
+# Проверка наличия API-ключей
 if not OPENAI_API_KEY:
     raise ValueError("❌ Ошибка: переменная окружения OPENAI_API_KEY не найдена!")
 if not AIRTABLE_API_KEY:
     raise ValueError("❌ Ошибка: переменная окружения AIRTABLE_API_KEY не найдена!")
 
-# Инициализация клиентов
+# Инициализация клиента OpenAI
 client = OpenAI(api_key=OPENAI_API_KEY)
-AIRTABLE_BASE_ID = "Untitled Base"  # Укажите реальный Base ID
-AIRTABLE_TABLE_NAME = "Table 1"  # Укажите точное название таблицы
+AIRTABLE_BASE_ID = "YOUR_BASE_ID"  # Укажите реальный Base ID
+AIRTABLE_TABLE_NAME = "YOUR_TABLE_NAME"  # Укажите точное название таблицы
 
 # Функция обработки контактных данных
-
 def process_contact_data(data):
     name_pattern = r"[А-Яа-яA-Za-z]+(?:\s[А-Яа-яA-Za-z]+)?"
     phone_pattern = r"\+?\d{10,15}"
@@ -42,9 +43,8 @@ def process_contact_data(data):
     )
 
 # Функция создания лида в Airtable
-
 def create_lead(name, phone, service, amount):
-    url = f"https://api.airtable.com/v0/appVoeCexAh2D0WmI/Table%201"
+    url = f"https://api.airtable.com/v0/{AIRTABLE_BASE_ID}/{AIRTABLE_TABLE_NAME}"
     headers = {
         "Authorization": f"Bearer {AIRTABLE_API_KEY}",
         "Content-Type": "application/json"
@@ -60,48 +60,50 @@ def create_lead(name, phone, service, amount):
     response = requests.post(url, json=data, headers=headers)
     print(f"🔍 Статус ответа: {response.status_code}")
     print(f"🔍 Тело ответа: {response.text}")
-    if response.status_code == 200:
+    if response.status_code in [200, 201]:  # Исправлено для учёта успешного кода 201
         print("✅ Лид успешно добавлен в Airtable!")
     else:
         print(f"❌ Ошибка при добавлении: {response.text}")
     return response.json()
 
 # Функция создания ассистента
-
 def create_assistant(client):
     assistant_file_path = 'assistant.json'
     if os.path.exists(assistant_file_path):
         with open(assistant_file_path, 'r') as file:
             assistant_data = json.load(file)
             return assistant_data['assistant_id']
-    
+
     knowledge_base_files = ["VmestoSlov_bot_baze.docx"]
     file_ids = []
     for file_path in knowledge_base_files:
-        file = client.files.create(file=open(file_path, "rb"), purpose='assistants')
-        file_ids.append(file.id)
-    
+        with open(file_path, "rb") as f:  # Исправлено на безопасное открытие файлов
+            file = client.files.create(file=f, purpose='assistants')
+            file_ids.append(file.id)
+
     vector_store = client.beta.vector_stores.create(
         name="Vmesto_slov_Vector_store", file_ids=file_ids
     )
     assistant = client.beta.assistants.create(
         instructions=assistant_instructions,
         model="gpt-4o",
-        tools=[{"type": "file_search"}, {"type": "code_interpreter"},
-               {"type": "function", "function": {
-                   "name": "create_lead",
-                   "description": "Захват деталей лида и сохранение в Airtable.",
-                   "parameters": {
-                       "type": "object",
-                       "properties": {
-                           "name": {"type": "string", "description": "Имя лида."},
-                           "phone": {"type": "string", "description": "Телефонный номер лида."},
-                           "service": {"type": "string", "description": "Услуга, интересующая лида."},
-                           "amount": {"type": "integer", "description": "Сумма сделки."}
-                       },
-                       "required": ["name", "phone", "service", "amount"]
-                   }
-               }}
+        tools=[
+            {"type": "file_search"},
+            {"type": "code_interpreter"},
+            {"type": "function", "function": {
+                "name": "create_lead",
+                "description": "Захват деталей лида и сохранение в Airtable.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "name": {"type": "string", "description": "Имя лида."},
+                        "phone": {"type": "string", "description": "Телефонный номер лида."},
+                        "service": {"type": "string", "description": "Услуга, интересующая лида."},
+                        "amount": {"type": "integer", "description": "Сумма сделки."}
+                    },
+                    "required": ["name", "phone", "service", "amount"]
+                }
+            }}
         ],
         tool_resources={"file_search": {"vector_store_ids": [vector_store.id]}}
     )
