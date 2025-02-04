@@ -86,6 +86,7 @@ def create_lead(name, phone, service, amount):
 
     # Создание ассистента
     # ✅ Используем конкретный ассистент
+def create_assistant(client):
     assistant_id = "asst_si51TxBCRS5x5zenOIzZGViv"  # ← Вставь сюда свой настоящий ID ассистента
     print(f"✅ Используем ассистента с ID: {assistant_id}")
     return assistant_id
