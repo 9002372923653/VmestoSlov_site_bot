@@ -3,13 +3,6 @@ import requests
 import re
 import os
 
-# 🗑️ Удаление файла assistant.json (если существует)
-if os.path.exists('assistant.json'):
-    os.remove('assistant.json')
-    print("✅ Файл assistant.json успешно удалён!")
-else:
-    print("⚠️ Файл assistant.json не найден.")
-
 import random
 def generate_chat_id():
     return random.randint(100000, 999999)  # Генерация ID от 100000 до 999999
