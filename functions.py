@@ -69,7 +69,7 @@ def create_lead(name, phone, service, amount):
             "Name": name,
             "Phone": phone,
             "Service": service,
-            "Amount of money": amount
+            "Amount of money": int(amount)  # Преобразование к целому числу
         }
     }
 
@@ -83,25 +83,6 @@ def create_lead(name, phone, service, amount):
     else:
         print(f"❌ Ошибка при добавлении: {response.text}")
     return response.json()
-
-# Функция создания ассистента
-def create_assistant(client):
-    assistant_file_path = 'assistant.json'
-    if os.path.exists(assistant_file_path):
-        with open(assistant_file_path, 'r') as file:
-            assistant_data = json.load(file)
-            return assistant_data[asst_si51TxBCRS5x5zenOIzZGViv]
-
-    knowledge_base_files = ["VmestoSlov_bot_baze.docx"]
-    file_ids = []
-    for file_path in knowledge_base_files:
-        with open(file_path, "rb") as f:  # Исправлено на безопасное открытие файлов
-            file = client.files.create(file=f, purpose='assistants')
-            file_ids.append(file.id)
-
-    vector_store = client.beta.vector_stores.create(
-        name="Vmesto_slov_Vector_store", file_ids=file_ids
-    )
 
     # Создание ассистента
     # ✅ Используем конкретный ассистент
