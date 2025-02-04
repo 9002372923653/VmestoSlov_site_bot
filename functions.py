@@ -82,7 +82,7 @@ def create_assistant(client):
     if os.path.exists(assistant_file_path):
         with open(assistant_file_path, 'r') as file:
             assistant_data = json.load(file)
-            return assistant_data['assistant_id']
+            return assistant_data[asst_si51TxBCRS5x5zenOIzZGViv]
 
     knowledge_base_files = ["VmestoSlov_bot_baze.docx"]
     file_ids = []
@@ -96,59 +96,8 @@ def create_assistant(client):
     )
 
     # Создание ассистента
-    assistant = client.beta.assistants.create(
-        instructions=assistant_instructions,
-        model="gpt-4o",
-        tools=[
-            {"type": "file_search"},
-            {"type": "code_interpreter"},
-            {"type": "function", "function": {
-                "name": "create_lead",
-                "description": "Захват деталей лида и сохранение в Airtable.",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "name": {"type": "string", "description": "Имя лида."},
-                        "phone": {"type": "string", "description": "Телефонный номер лида."},
-                        "service": {"type": "string", "description": "Услуга, интересующая лида."},
-                        "amount": {"type": "integer", "description": "Сумма сделки."}
-                    },
-                    "required": ["name", "phone", "service", "amount"]
-                }
-            }}
-        ],
-        tool_resources={"file_search": {"vector_store_ids": [vector_store.id]}}
-    )
-    print(f"✅ Ассистент создан с ID: {assistant.id}")
-    # 🚀 Проверка зарегистрированных функций ассистента
-    print(f"🛠️ Зарегистрированные инструменты ассистента: {assistant.tools}")
+    # ✅ Используем конкретный ассистент
+    assistant_id = "asst_si51TxBCRS5x5zenOIzZGViv"  # ← Вставь сюда свой настоящий ID ассистента
+    print(f"✅ Используем ассистента с ID: {assistant_id}")
+    return assistant_id
 
-    # Обновление ассистента
-    assistant = client.beta.assistants.update(
-        assistant_id=assistant.id,
-        instructions=assistant_instructions,
-        tools=[
-            {"type": "file_search"},
-            {"type": "code_interpreter"},
-            {"type": "function", "function": {
-                "name": "create_lead",
-                "description": "Захват деталей лида и сохранение в Airtable.",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "name": {"type": "string", "description": "Имя лида."},
-                        "phone": {"type": "string", "description": "Телефонный номер лида."},
-                        "service": {"type": "string", "description": "Услуга, интересующая лида."},
-                        "amount": {"type": "integer", "description": "Сумма сделки."}
-                    },
-                    "required": ["name", "phone", "service", "amount"]
-                }
-            }}
-        ],
-        tool_resources={"file_search": {"vector_store_ids": [vector_store.id]}}
-    )
-    print(f"✅ Ассистент обновлён с ID: {assistant.id}")
-
-    with open(assistant_file_path, 'w') as file:
-        json.dump({'assistant_id': assistant.id}, file)
-    return assistant.id
